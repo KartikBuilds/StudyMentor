@@ -1,0 +1,34 @@
+# FastAPI and server dependencies
+fastapi
+uvicorn[standard]
+python-multipart
+pydantic
+
+# Database and Authentication
+pymongo
+motor  # Async MongoDB driver
+bcrypt
+PyJWT
+python-jose[cryptography]
+passlib[bcrypt]
+email-validator
+bson
+
+# Existing dependencies
+python-dotenv
+google-generativeai
+streamlit
+langchain
+langchain-groq
+groq
+PyPDF2
+langchain-community
+faiss-cpu
+sentence-transformers
+numpy
+tiktoken
+langchain-google-genai
+pytesseract
+Pillow
+opencv-python
+easyocr
