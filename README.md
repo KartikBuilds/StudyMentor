@@ -109,7 +109,7 @@ graph TB
 
 #### 1️⃣ **Clone the Repository**
 ```bash
-git clone https://github.com/viraj-gavade/StudyMentor-AI.git
+git clone https://github.com/kartikbuilds/StudyMentor-AI.git
 cd StudyMentor-AI
 ```
 
@@ -388,13 +388,9 @@ MIT License - Feel free to use, modify, and distribute! 🎉
 ## 📞 **Contact & Support**
 
 ### 👨‍💻 **Developer**
-- **GitHub**: [@viraj-gavade](https://github.com/viraj-gavade)
-- **Email**: viraj.gavade@example.com
+- **GitHub**: [@Kartik-Shinde]([https://github.com/kartikbuilds])
+- **Email**: itskrishdev3@gmail.com
 
-### 🆘 **Support**
-- 📝 **Issues**: [GitHub Issues](https://github.com/viraj-gavade/StudyMentor-AI/issues)
-- 💬 **Discussions**: [GitHub Discussions](https://github.com/viraj-gavade/StudyMentor-AI/discussions)
-- 📧 **Email**: support@studymentor.ai
 
 ---
 
