@@ -1,0 +1,39 @@
+# Render Blueprint for StudyMentor backend.
+# This file contains NO secrets. Every secret-bearing variable below uses
+# `sync: false`, which tells Render to prompt for the value in its own
+# dashboard/secret store rather than reading it from this repo.
+#
+# Usage: in the Render dashboard, "New +" -> "Blueprint", point it at this
+# repo/branch. Render reads this file and creates the service below; you
+# then fill in the sync:false values through Render's UI.
+services:
+  - type: web
+    name: studymentor-backend
+    runtime: python
+    plan: free
+    branch: main
+    rootDir: Backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.9"
+      - key: GOOGLE_API_KEY
+        sync: false
+      - key: LLM_PROVIDER
+        value: gemini
+      - key: MONGODB_URL
+        sync: false
+      - key: JWT_SECRET_KEY
+        sync: false
+      - key: JWT_ALGORITHM
+        value: HS256
+      - key: JWT_EXPIRE_MINUTES
+        value: "1440"
+      - key: ENVIRONMENT
+        value: production
+      - key: DEBUG
+        value: "False"
+      - key: ALLOWED_ORIGINS
+        sync: false
