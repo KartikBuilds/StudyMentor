@@ -1,0 +1,16 @@
+# Development/testing dependencies. Layers on top of the lean production
+# requirements.txt with everything needed to run the full test suite,
+# including the alternate Groq LLM provider path.
+#
+# Install with: pip install -r requirements-dev.txt
+-r requirements.txt
+
+# Test tooling
+pytest
+httpx  # required by fastapi.testclient.TestClient
+
+# Groq LLM provider SDK - not installed in production (LLM_PROVIDER=gemini
+# there), but needed locally/in CI to exercise and test the groq code path
+# in utils/llm_utils.py.
+langchain-groq
+groq
