@@ -1,24 +1,14 @@
 """
 llm_utils.py
-Wraps LLM calls with support for multiple providers (Groq, Gemini, etc.)
-Currently uses Groq for local testing - easily switchable to Gemini.
+Wraps LLM calls with support for multiple providers (Groq, Gemini).
 Includes PDF document extraction for syllabus parsing.
 
-SWITCHING BETWEEN LLM PROVIDERS:
-1. To use Groq (Current): Keep current code active
-2. To use Gemini:
-   - Set GOOGLE_API_KEY in your .env file
-   - Comment out Groq section (lines ~15-25)
-   - Uncomment Gemini section (lines ~27-42)
-   - Uncomment alternative Gemini implementations in functions
-   - Run: pip install langchain-google-genai (if not already installed)
+PROVIDER SELECTION:
+Set LLM_PROVIDER to "gemini" or "groq" in the environment. Only the
+credential for the selected provider is required or accessed - the other
+provider's key/client is never touched. Defaults to "gemini" if unset.
 """
 
-# LLM Backend Configuration
-# Currently using Groq for local testing - easy to switch to Gemini later
-
-# Option 1: Groq (Current - Active)
-from langchain_groq import ChatGroq
 import asyncio
 import dotenv
 import os
@@ -48,41 +38,50 @@ except ImportError:
 
 dotenv.load_dotenv()
 
-# Groq Configuration (Currently Active)
-groq_api_key = os.getenv("GROQ_API_KEY")
-# print(f"Groq API Key: {groq_api_key}")
-if not groq_api_key:
-    raise RuntimeError("GROQ_API_KEY not found in environment. Please set it in your .env file.")
+# Normalize LLM_PROVIDER once. Defaults to "gemini" when unset.
+LLM_PROVIDER = os.getenv("LLM_PROVIDER", "gemini").strip().lower()
 
-# Initialize Groq LLM
+SUPPORTED_PROVIDERS = ("gemini", "groq")
 
+if LLM_PROVIDER not in SUPPORTED_PROVIDERS:
+    raise RuntimeError(
+        f"Unsupported LLM_PROVIDER '{LLM_PROVIDER}'. "
+        f"Set LLM_PROVIDER to one of: {', '.join(SUPPORTED_PROVIDERS)}."
+    )
 
-# Option 2: Google Gemini (Commented - Ready to Switch)
-# Uncomment the lines below and comment out the Groq section above to switch to Gemini
+if LLM_PROVIDER == "gemini":
+    # Only Gemini's credential is required/accessed - Groq is never
+    # imported or initialized in this branch.
+    import google.generativeai as genai
+    from langchain_google_genai import ChatGoogleGenerativeAI
 
-import google.generativeai as genai
-from langchain_google_genai import ChatGoogleGenerativeAI
+    gemini_api_key = os.getenv("GOOGLE_API_KEY")
+    if not gemini_api_key:
+        raise RuntimeError(
+            "LLM_PROVIDER is set to 'gemini' but GOOGLE_API_KEY is not set in the environment."
+        )
 
-# Gemini Configuration
-gemini_api_key = os.getenv("GOOGLE_API_KEY")
-if not gemini_api_key:
-    raise RuntimeError("GOOGLE_API_KEY not found in environment. Please set it in your .env file.")
+    genai.configure(api_key=gemini_api_key)
 
-# Configure Gemini
-genai.configure(api_key=gemini_api_key)
+    llm = ChatGoogleGenerativeAI(
+        model="gemini-3.6-flash",
+        google_api_key=gemini_api_key,
+        temperature=0.7,
+        convert_system_message_to_human=True
+    )
 
-# Initialize Gemini LLM
-llm = ChatGoogleGenerativeAI(
-    model="gemini-3.6-flash",
-    google_api_key=gemini_api_key,
-    temperature=0.7,
-    convert_system_message_to_human=True
-)
+else:  # LLM_PROVIDER == "groq"
+    # Only Groq's credential is required/accessed - Gemini is never
+    # imported or initialized in this branch.
+    from langchain_groq import ChatGroq
 
+    groq_api_key = os.getenv("GROQ_API_KEY")
+    if not groq_api_key:
+        raise RuntimeError(
+            "LLM_PROVIDER is set to 'groq' but GROQ_API_KEY is not set in the environment."
+        )
 
-
-
-# llm = ChatGroq(api_key=groq_api_key, model='gemma2-9b-it')
+    llm = ChatGroq(api_key=groq_api_key, model="gemma2-9b-it")
 def extract_text_from_pdf(pdf_path: str) -> str:
     """
     Extracts all text from a PDF file.
