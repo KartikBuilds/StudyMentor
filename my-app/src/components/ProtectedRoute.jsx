@@ -1,19 +1,11 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Loader, Lock } from 'lucide-react';
-
-// Demo mode - set to true to bypass all authentication
-const DEMO_MODE = true;
+import { Lock } from 'lucide-react';
 
 const ProtectedRoute = ({ children, requireAuth = true }) => {
-    const { isAuthenticated, isLoading, user } = useAuth();
+    const { isAuthenticated, isLoading } = useAuth();
     const location = useLocation();
-
-    // In demo mode, always allow access to all routes
-    if (DEMO_MODE) {
-        return children;
-    }
 
     // Show loading spinner while checking authentication
     if (isLoading) {
@@ -50,39 +42,6 @@ const ProtectedRoute = ({ children, requireAuth = true }) => {
     }
 
     // If user is authenticated but route doesn't require auth, or if route requires auth and user is authenticated
-    return children;
-};
-
-// Higher-order component for protecting routes
-export const withAuthProtection = (Component, requireAuth = true) => {
-    return function ProtectedComponent(props) {
-        return (
-            <ProtectedRoute requireAuth={requireAuth}>
-                <Component {...props} />
-            </ProtectedRoute>
-        );
-    };
-};
-
-// Component for routes that should only be accessible to non-authenticated users (like login/register)
-export const PublicOnlyRoute = ({ children }) => {
-    const { isAuthenticated, isLoading } = useAuth();
-    const location = useLocation();
-
-    if (isLoading) {
-        return (
-            <div className="min-h-screen flex items-center justify-center">
-                <Loader className="w-8 h-8 animate-spin text-blue-600" />
-            </div>
-        );
-    }
-
-    if (isAuthenticated) {
-        // Redirect to intended destination or dashboard
-        const from = location.state?.from?.pathname || '/dashboard';
-        return <Navigate to={from} replace />;
-    }
-
     return children;
 };
 

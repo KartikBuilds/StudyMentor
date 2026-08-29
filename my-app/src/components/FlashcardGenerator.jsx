@@ -17,7 +17,7 @@ export default function FlashcardGenerator() {
   const [showAnswer, setShowAnswer] = useState(false);
   const [studyMode, setStudyMode] = useState(false);
   const [mastered, setMastered] = useState(new Set());
-  const [direction, setDirection] = useState(0); // 1 = next, -1 = prev
+  const [, setDirection] = useState(0); // 1 = next, -1 = prev
 
   const difficulties = [
     { label: 'Easy', value: 'easy', color: 'green', icon: '🟢' },

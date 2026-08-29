@@ -16,7 +16,7 @@ const api = axios.create({
 api.interceptors.request.use(
     (config) => {
         // Add auth token if available
-        const token = localStorage.getItem('auth_token');
+        const token = localStorage.getItem('studymentor_token');
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
@@ -36,7 +36,7 @@ api.interceptors.response.use(
         // Handle common error scenarios
         if (error.response?.status === 401) {
             // Handle unauthorized access
-            localStorage.removeItem('auth_token');
+            localStorage.removeItem('studymentor_token');
             // Could redirect to login page here
         } else if (error.response?.status >= 500) {
             // Handle server errors

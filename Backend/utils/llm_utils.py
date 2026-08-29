@@ -63,7 +63,7 @@ import google.generativeai as genai
 from langchain_google_genai import ChatGoogleGenerativeAI
 
 # Gemini Configuration
-gemini_api_key = os.getenv("GOOGLE_API_KEY") or "AIzaSyD_yx_UaIu8_e65WMoQnZGdG5171gULoVM"
+gemini_api_key = os.getenv("GOOGLE_API_KEY")
 if not gemini_api_key:
     raise RuntimeError("GOOGLE_API_KEY not found in environment. Please set it in your .env file.")
 
@@ -330,7 +330,7 @@ Please respond ONLY with the JSON structure, no additional text.
 """
     
     # Current implementation (Groq/LangChain)
-    response = llm.predict(prompt)
+    response = llm.invoke(prompt).content
     return response
     
     # Alternative Gemini implementation (Commented - Ready to Switch)
@@ -349,7 +349,7 @@ async def call_llm_async(prompt: str) -> str:
     """Generic async LLM call function for AI features"""
     try:
         # Current implementation (Groq/LangChain)
-        response = llm.predict(prompt)
+        response = llm.invoke(prompt).content
         return response
         
         # Alternative Gemini implementation (Commented - Ready to Switch)
@@ -421,7 +421,7 @@ Output in JSON format with this exact structure:
 Respond ONLY with the JSON, no additional text."""
     
     # Current implementation (Groq/LangChain)
-    response = llm.predict(prompt)
+    response = llm.invoke(prompt).content
     return response
     
     # Alternative Gemini implementation (Commented - Ready to Switch)
@@ -466,7 +466,7 @@ Rules:
 Return ONLY valid JSON, no additional text."""
     
     # Current implementation (Groq/LangChain)
-    response = llm.predict(prompt)
+    response = llm.invoke(prompt).content
     return response
     
     # Alternative Gemini implementation (Commented - Ready to Switch)
@@ -566,7 +566,7 @@ Guidelines:
 Respond ONLY with the JSON, no additional text."""
     
     # Current implementation (Groq/LangChain)
-    response = llm.predict(prompt)
+    response = llm.invoke(prompt).content
     return response
     
     # Alternative Gemini implementation (Commented - Ready to Switch)
@@ -616,7 +616,7 @@ Guidelines:
 Respond ONLY with the JSON, no additional text."""
     
     # Current implementation (Groq/LangChain)
-    response = llm.predict(prompt)
+    response = llm.invoke(prompt).content
     return response
     
     # Alternative Gemini implementation (Commented - Ready to Switch)
@@ -649,7 +649,7 @@ Provide a comprehensive answer based on the context provided. If the context doe
         prompt = f"Answer the following question: {question}"
     
     # Current implementation (Groq/LangChain)
-    response = llm.predict(prompt)
+    response = llm.invoke(prompt).content
     return response
     
     # Alternative Gemini implementation (Commented - Ready to Switch)

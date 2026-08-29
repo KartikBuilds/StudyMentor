@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
 
 // Authentication API base URL
-const API_BASE_URL = 'http://localhost:8000';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
 // Auth Context
 const AuthContext = createContext();
@@ -20,8 +20,9 @@ const AUTH_ACTIONS = {
     UPDATE_PROFILE: 'UPDATE_PROFILE'
 };
 
-// Demo mode - set to true to bypass authentication
-const DEMO_MODE = true;
+// Demo mode - bypasses real authentication with a fake local user.
+// Off by default; opt in explicitly via VITE_DEMO_MODE=true for offline demos.
+const DEMO_MODE = import.meta.env.VITE_DEMO_MODE === 'true';
 
 // Initial state
 const initialState = {
@@ -270,7 +271,7 @@ export const AuthProvider = ({ children }) => {
             const response = await apiCall('/auth/refresh', { method: 'POST' });
             dispatch({ type: AUTH_ACTIONS.LOGIN_SUCCESS, payload: response });
             return true;
-        } catch (error) {
+        } catch {
             dispatch({ type: AUTH_ACTIONS.LOGOUT });
             return false;
         }
@@ -296,6 +297,7 @@ export const AuthProvider = ({ children }) => {
 };
 
 // Custom hook to use auth context
+// eslint-disable-next-line react-refresh/only-export-components -- hook is colocated with its provider by design
 export const useAuth = () => {
     const context = useContext(AuthContext);
     if (!context) {

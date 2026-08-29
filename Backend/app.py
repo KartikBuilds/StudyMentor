@@ -35,10 +35,23 @@ app = FastAPI(
     redoc_url="/redoc"  # ReDoc at /redoc
 )
 
-# CORS middleware for React frontend
+# CORS configuration
+# Development origins are always allowed; production origins must be set via
+# the ALLOWED_ORIGINS env var (comma-separated). Wildcard origins are not
+# permitted since allow_credentials=True.
+_dev_origins = ["http://localhost:3000", "http://localhost:5173"]
+_prod_origins = [o.strip() for o in os.getenv("ALLOWED_ORIGINS", "").split(",") if o.strip()]
+
+if os.getenv("ENVIRONMENT", "development") == "production" and not _prod_origins:
+    raise RuntimeError(
+        "ALLOWED_ORIGINS must be set (comma-separated production origins) when ENVIRONMENT=production."
+    )
+
+allowed_origins = _dev_origins + _prod_origins
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:5173"],  # React dev servers
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -99,7 +112,7 @@ async def root():
                 "quiz": "/api/quiz",
                 "study_plan": "/api/study-plan", 
                 "syllabus": "/api/syllabus",
-                "auth": "/api/auth"
+                "auth": "/auth"
             }
         }
     )

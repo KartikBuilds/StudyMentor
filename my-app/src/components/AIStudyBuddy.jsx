@@ -11,7 +11,7 @@ const AIStudyBuddy = () => {
     const [messages, setMessages] = useState([]);
     const [inputMessage, setInputMessage] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const [showSuggestions, setShowSuggestions] = useState(true);
+    const [, setShowSuggestions] = useState(true);
     const [geminiConnected, setGeminiConnected] = useState(false);
     const [apiKeyConfigured, setApiKeyConfigured] = useState(false);
     const messagesEndRef = useRef(null);
@@ -154,7 +154,7 @@ const AIStudyBuddy = () => {
             };
 
             setMessages(prev => [...prev, aiMessage]);
-        } catch (error) {
+        } catch {
             const errorMessage = {
                 id: Date.now() + 1,
                 type: 'ai',

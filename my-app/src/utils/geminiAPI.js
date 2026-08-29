@@ -143,7 +143,7 @@ Please provide a helpful, encouraging response as StudyMentor AI. If appropriate
     // Test connection to Gemini API
     async testConnection() {
         try {
-            const response = await this.chatWithStudyBuddy("Hello, can you help me study?");
+            await this.chatWithStudyBuddy("Hello, can you help me study?");
             return true;
         } catch (error) {
             console.error('Gemini connection test failed:', error);
@@ -224,7 +224,7 @@ IMPORTANT: Extract actual subjects and topics from the provided content. If the 
             console.error('Syllabus analysis error:', error);
 
             // Last resort fallback
-            const emergencyFallback = this.createEmergencyFallback(fileName, syllabusContent);
+            const emergencyFallback = this.createEmergencyFallback(fileName);
             console.log('Using emergency fallback:', emergencyFallback);
             return emergencyFallback;
         }
@@ -328,7 +328,7 @@ IMPORTANT: Extract actual subjects and topics from the provided content. If the 
     }
 
     // Create emergency fallback when everything else fails
-    createEmergencyFallback(fileName, syllabusContent) {
+    createEmergencyFallback(fileName) {
         const subjectName = fileName ? fileName.replace(/\.(pdf|txt|doc|docx)$/i, '') : "Study Material";
 
         return {
@@ -407,7 +407,7 @@ Distribute all topics evenly across ${examDays} days with specific tasks and tim
                     return JSON.parse(jsonMatch[0]);
                 }
                 throw new Error('No JSON found in response');
-            } catch (parseError) {
+            } catch {
                 // Fallback structure
                 return {
                     total_days: examDays,
@@ -465,7 +465,7 @@ Make questions specific and educational. Answers should be comprehensive but con
                     return JSON.parse(jsonMatch[0]);
                 }
                 throw new Error('No JSON found in response');
-            } catch (parseError) {
+            } catch {
                 // Fallback structure
                 return {
                     total: maxCards,
@@ -533,7 +533,7 @@ Create diverse quiz types covering different difficulty levels. Return ONLY vali
                     return JSON.parse(jsonMatch[0]);
                 }
                 throw new Error('No JSON found in response');
-            } catch (parseError) {
+            } catch {
                 // Fallback structure
                 return {
                     total: numQuizzes,

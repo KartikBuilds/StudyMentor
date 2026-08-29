@@ -34,6 +34,13 @@ venv.bak/
 credentials.json
 token.json
 
+# Firebase / service account credentials (NEVER commit these)
+firebase_key.json
+*firebase*key*.json
+*serviceAccount*.json
+*.pem
+*.p12
+
 # IDE
 .vscode/
 .idea/

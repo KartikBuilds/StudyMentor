@@ -12,7 +12,6 @@ import StudyPlanGenerator from './components/StudyPlanGenerator';
 import FlashcardGenerator from './components/FlashcardGenerator';
 import QuizGenerator from './components/QuizGenerator';
 import AIStudyBuddy from './components/AIStudyBuddy';
-import SyllabusHub from './components/SyllabusHub';
 import { useAuth } from './contexts/AuthContext';
 
 function AppLayout() {
@@ -45,7 +44,7 @@ function AppLayout() {
             } />
             <Route path="/syllabus-hub" element={
               <ProtectedRoute>
-                <SyllabusHub />
+                <SyllabusPdfParser />
               </ProtectedRoute>
             } />
             <Route path="/ai-buddy" element={
@@ -58,7 +57,6 @@ function AppLayout() {
             <Route path="/flashcards" element={<FlashcardGenerator />} />
             <Route path="/study-plan" element={<StudyPlanGenerator />} />
             <Route path="/quiz" element={<QuizGenerator />} />
-            <Route path="/syllabus-pdf" element={<SyllabusPdfParser />} />
 
             {/* Catch all route */}
             <Route path="*" element={<Navigate to="/" replace />} />

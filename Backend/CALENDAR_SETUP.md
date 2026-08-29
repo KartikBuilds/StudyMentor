@@ -17,10 +17,10 @@
 ## Backend Setup
 
 1. **Install Dependencies**
-   ```bash
-   cd Backend
-   pip install -r requirements_calendar.txt
-   ```
+
+   Google Calendar dependencies are included in the main `requirements.txt`
+   (they are imported unconditionally by `routers/calendar.py`), so a normal
+   `pip install -r requirements.txt` is all that's needed.
 
 2. **Place Credentials File**
    ```
@@ -96,7 +96,6 @@ The frontend components are already integrated:
 Backend/
 ├── credentials.json          # OAuth2 credentials (not in repo)
 ├── token.json               # User access token (auto-generated)
-├── requirements_calendar.txt # Google Calendar dependencies
 ├── utils/
 │   └── calendar_utils.py    # Calendar integration logic
 └── routers/

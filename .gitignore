@@ -1,0 +1,13 @@
+.DS_Store
+node_modules/
+
+# Secrets - never commit
+.env
+.env.*
+!.env.example
+*firebase*key*.json
+*serviceAccount*.json
+credentials.json
+token.json
+*.pem
+*.p12

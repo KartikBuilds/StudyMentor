@@ -37,8 +37,10 @@
 
 2. **Configure Frontend Environment**
    ```bash
-   # The .env file is already created with:
-   REACT_APP_API_BASE_URL=http://localhost:8000
+   cp .env.example .env
+   # This is a Vite app, so the variable is VITE_API_BASE_URL (not
+   # REACT_APP_*, which only applies to Create React App projects):
+   # VITE_API_BASE_URL=http://localhost:8000
    ```
 
 3. **Start the Frontend**
@@ -54,7 +56,7 @@
 - Real-time conversation with Gemini AI
 - Context-aware responses
 - Study assistance and explanations
-- Available at: `/ai-study-buddy`
+- Available at: `/ai-buddy`
 
 ### 2. Syllabus Processing Pipeline
 - Upload syllabus files (PDF, TXT)
@@ -105,9 +107,8 @@
 
 ## Demo Mode
 
-The application includes demo mode with:
-- Mock authentication (bypasses login)
-- Fallback responses if AI API is unavailable
-- Sample data for testing UI components
+Demo mode is **off by default** — the app uses real backend authentication and
+real AI calls. To opt into an offline/no-backend demo (mock auth, sample
+data, no real AI calls), set `VITE_DEMO_MODE=true` in `my-app/.env`.
 
 To enable full AI features, ensure your Gemini API key is properly configured.

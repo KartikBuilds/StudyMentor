@@ -105,18 +105,13 @@ def decode_access_token(token: str) -> Optional[Dict]:
 
 # User database operations
 def create_user_in_db(user_data: UserRegistration) -> Dict:
-    """Create a new user in MongoDB or return demo user"""
+    """Create a new user in MongoDB"""
     if not MONGODB_AVAILABLE:
-        # Return a demo user for testing
-        return {
-            "_id": "demo_user_id",
-            "full_name": user_data.full_name,
-            "email": user_data.email.lower(),
-            "created_at": datetime.utcnow(),
-            "study_preferences": user_data.study_preferences or {},
-            "study_stats": {"total_study_time": 0, "completed_sessions": 0}
-        }
-    
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Database is unavailable. Registration cannot be completed right now - please try again shortly."
+        )
+
     try:
         # Check if user already exists
         existing_user = users_collection.find_one({"email": user_data.email.lower()})
