@@ -6,7 +6,7 @@ Includes PDF document extraction for syllabus parsing.
 
 SWITCHING BETWEEN LLM PROVIDERS:
 1. To use Groq (Current): Keep current code active
-2. To use Gemini: 
+2. To use Gemini:
    - Set GOOGLE_API_KEY in your .env file
    - Comment out Groq section (lines ~15-25)
    - Uncomment Gemini section (lines ~27-42)
@@ -73,7 +73,7 @@ genai.configure(api_key=gemini_api_key)
 
 # Initialize Gemini LLM
 llm = ChatGoogleGenerativeAI(
-    model="gemini-3.6-flash",  
+    model="gemini-3.6-flash",
     google_api_key=gemini_api_key,
     temperature=0.7,
     convert_system_message_to_human=True
@@ -108,24 +108,24 @@ def preprocess_image_for_ocr(image_path: str) -> str:
     """
     if not OPENCV_AVAILABLE:
         return image_path  # Return original if OpenCV not available
-    
+
     try:
         # Read image
         img = cv2.imread(image_path)
-        
+
         # Convert to grayscale
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        
+
         # Apply denoising
         denoised = cv2.fastNlMeansDenoising(gray)
-        
+
         # Apply threshold to get better contrast
         _, thresh = cv2.threshold(denoised, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-        
+
         # Save processed image
         processed_path = image_path.replace('.', '_processed.')
         cv2.imwrite(processed_path, thresh)
-        
+
         return processed_path
     except Exception as e:
         print(f"Image preprocessing failed: {e}")
@@ -141,7 +141,7 @@ def extract_text_from_image_pytesseract(image_path: str) -> str:
     """
     if not PYTESSERACT_AVAILABLE:
         return "Error: Pytesseract not available. Please install: pip install pytesseract"
-    
+
     try:
         # Test if tesseract is accessible
         try:
@@ -151,13 +151,13 @@ def extract_text_from_image_pytesseract(image_path: str) -> str:
                    "Windows: Download from https://github.com/UB-Mannheim/tesseract/wiki\n" + \
                    "Mac: brew install tesseract\n" + \
                    "Linux: apt-get install tesseract-ocr"
-        
+
         # Preprocess image for better OCR
         processed_path = preprocess_image_for_ocr(image_path)
-        
+
         # Open image with PIL
         image = Image.open(processed_path)
-        
+
         # Extract text using Pytesseract with multiple PSM modes for better results
         configs = [
             '--psm 6',  # Uniform block of text
@@ -165,7 +165,7 @@ def extract_text_from_image_pytesseract(image_path: str) -> str:
             '--psm 3',  # Fully automatic page segmentation
             '--psm 1'   # Automatic page segmentation with OSD
         ]
-        
+
         best_text = ""
         for config in configs:
             try:
@@ -174,13 +174,13 @@ def extract_text_from_image_pytesseract(image_path: str) -> str:
                     best_text = text
             except Exception:
                 continue
-        
+
         # Clean up processed image if it was created
         if processed_path != image_path and os.path.exists(processed_path):
             os.remove(processed_path)
-        
+
         return best_text.strip() if best_text.strip() else "Error: No text could be extracted from the image"
-        
+
     except Exception as e:
         return f"Error extracting text with Pytesseract: {str(e)}"
 
@@ -194,18 +194,18 @@ def extract_text_from_image_easyocr(image_path: str) -> str:
     """
     if not EASYOCR_AVAILABLE:
         return "Error: EasyOCR not available. Please install: pip install easyocr"
-    
+
     try:
         # Initialize EasyOCR reader (English by default)
         reader = easyocr.Reader(['en'])
-        
+
         # Extract text
         results = reader.readtext(image_path)
-        
+
         # Combine all detected text
         text_parts = [result[1] for result in results if result[2] > 0.5]  # Confidence > 0.5
         extracted_text = '\n'.join(text_parts)
-        
+
         return extracted_text.strip()
     except Exception as e:
         return f"Error extracting text with EasyOCR: {str(e)}"
@@ -221,7 +221,7 @@ def check_ocr_availability() -> dict:
         "easyocr": False,
         "tesseract_engine": False
     }
-    
+
     # Check Pytesseract
     if PYTESSERACT_AVAILABLE:
         try:
@@ -231,10 +231,10 @@ def check_ocr_availability() -> dict:
         except Exception:
             status["pytesseract"] = False
             status["tesseract_engine"] = False
-    
+
     # Check EasyOCR
     status["easyocr"] = EASYOCR_AVAILABLE
-    
+
     return status
 
 def extract_text_from_image(image_file, ocr_method: str = "auto") -> str:
@@ -251,9 +251,9 @@ def extract_text_from_image(image_file, ocr_method: str = "auto") -> str:
         with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as tmp_file:
             tmp_file.write(image_file.getvalue())
             temp_path = tmp_file.name
-        
+
         extracted_text = ""
-        
+
         if ocr_method == "pytesseract":
             extracted_text = extract_text_from_image_pytesseract(temp_path)
         elif ocr_method == "easyocr":
@@ -261,16 +261,16 @@ def extract_text_from_image(image_file, ocr_method: str = "auto") -> str:
         elif ocr_method == "auto":
             # Smart auto-selection: Try EasyOCR first (more reliable), then Pytesseract
             extracted_text = ""
-            
+
             if EASYOCR_AVAILABLE:
                 extracted_text = extract_text_from_image_easyocr(temp_path)
-                
+
             # If EasyOCR failed or not available, try Pytesseract
             if (not extracted_text or extracted_text.startswith("Error")) and PYTESSERACT_AVAILABLE:
                 pytesseract_result = extract_text_from_image_pytesseract(temp_path)
                 if pytesseract_result and not pytesseract_result.startswith("Error"):
                     extracted_text = pytesseract_result
-            
+
             # If both failed or neither available
             if not extracted_text or extracted_text.startswith("Error"):
                 if not EASYOCR_AVAILABLE and not PYTESSERACT_AVAILABLE:
@@ -281,13 +281,13 @@ def extract_text_from_image(image_file, ocr_method: str = "auto") -> str:
                     extracted_text = "Error: No text could be detected in the image"
         else:
             extracted_text = f"Error: Unknown OCR method '{ocr_method}'. Use 'auto', 'pytesseract', or 'easyocr'"
-        
+
         # Clean up temporary file
         if os.path.exists(temp_path):
             os.remove(temp_path)
-        
+
         return extracted_text
-        
+
     except Exception as e:
         return f"Error processing image: {str(e)}"
 
@@ -342,12 +342,12 @@ async def parse_syllabus_text(text: str) -> str:
     # Validate input
     if not text or not text.strip():
         return "Error: No text provided to parse"
-    
+
     # Clean and truncate text if too long
     clean_text = text.strip()
     if len(clean_text) > 8000:  # Limit for context window
         clean_text = clean_text[:8000] + "..."
-    
+
     # More detailed prompt with specific instructions
     prompt = f"""
 Please analyze the following syllabus text and organize it into structured topics and subtopics.
@@ -367,7 +367,7 @@ INSTRUCTIONS:
       "subtopics": ["Subtopic 1.1", "Subtopic 1.2"]
     }},
     {{
-      "topic_name": "Main Topic 2", 
+      "topic_name": "Main Topic 2",
       "subtopics": ["Subtopic 2.1", "Subtopic 2.2"]
     }}
   ]
@@ -375,7 +375,7 @@ INSTRUCTIONS:
 
 Please respond ONLY with the JSON structure, no additional text.
 """
-    
+
     # Offloaded to a worker thread - see call_llm_async's docstring for why.
     return await asyncio.to_thread(lambda: extract_llm_text(llm.invoke(prompt).content))
 
@@ -403,8 +403,8 @@ def generate_quiz(topic: str) -> str:
         from .vector_utils import get_relevant_context
         context = get_relevant_context(topic)
         if context:
-            prompt = f"""Based on the following context, create 5 multiple choice questions for the topic: {topic}. 
-            
+            prompt = f"""Based on the following context, create 5 multiple choice questions for the topic: {topic}.
+
 Context:
 {context}
 
@@ -453,11 +453,11 @@ Output in JSON format with this exact structure:
 }}
 
 Respond ONLY with the JSON, no additional text."""
-    
+
     # Current implementation (Groq/LangChain)
     response = extract_llm_text(llm.invoke(prompt).content)
     return response
-    
+
     # Alternative Gemini implementation (Commented - Ready to Switch)
     """
     # Direct Gemini API call
@@ -498,11 +498,11 @@ Rules:
 - For final days, focus on comprehensive review
 
 Return ONLY valid JSON, no additional text."""
-    
+
     # Current implementation (Groq/LangChain)
     response = extract_llm_text(llm.invoke(prompt).content)
     return response
-    
+
     # Alternative Gemini implementation (Commented - Ready to Switch)
     """
     # Direct Gemini API call
@@ -558,7 +558,7 @@ Output in JSON format with this exact structure:
     "flashcards": [
         {{
             "front": "Question or concept to remember",
-            "back": "Answer, definition, or explanation", 
+            "back": "Answer, definition, or explanation",
             "category": "Category or subtopic",
             "difficulty": "easy|medium|hard"
         }}
@@ -584,7 +584,7 @@ Output in JSON format with this exact structure:
         {{
             "front": "Question or concept to remember",
             "back": "Answer, definition, or explanation",
-            "category": "Category or subtopic", 
+            "category": "Category or subtopic",
             "difficulty": "easy|medium|hard"
         }}
     ]
@@ -598,11 +598,11 @@ Guidelines:
 - Cover different aspects of the topic
 
 Respond ONLY with the JSON, no additional text."""
-    
+
     # Current implementation (Groq/LangChain)
     response = extract_llm_text(llm.invoke(prompt).content)
     return response
-    
+
     # Alternative Gemini implementation (Commented - Ready to Switch)
     """
     # Direct Gemini API call
@@ -624,7 +624,7 @@ Syllabus Structure:
 
 Create comprehensive flashcards that cover:
 - Key definitions and concepts
-- Important formulas and principles  
+- Important formulas and principles
 - Major topics and their relationships
 - Critical facts and information
 
@@ -648,11 +648,11 @@ Guidelines:
 - Use category names from the syllabus structure
 
 Respond ONLY with the JSON, no additional text."""
-    
+
     # Current implementation (Groq/LangChain)
     response = extract_llm_text(llm.invoke(prompt).content)
     return response
-    
+
     # Alternative Gemini implementation (Commented - Ready to Switch)
     """
     # Direct Gemini API call
@@ -681,11 +681,11 @@ Provide a comprehensive answer based on the context provided. If the context doe
             prompt = f"Answer the following question: {question}"
     except ImportError:
         prompt = f"Answer the following question: {question}"
-    
+
     # Current implementation (Groq/LangChain)
     response = extract_llm_text(llm.invoke(prompt).content)
     return response
-    
+
     # Alternative Gemini implementation (Commented - Ready to Switch)
     """
     # Direct Gemini API call
