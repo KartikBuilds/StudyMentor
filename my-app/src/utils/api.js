@@ -67,6 +67,10 @@ export const quizAPI = {
     getHistory: (userId) => api.get(`/api/quiz/history/${userId}`),
 };
 
+export const aiAPI = {
+    chat: (data) => api.post('/api/ai/chat', data),
+};
+
 export const calendarAPI = {
     syncStudyPlan: (data) => api.post('/api/calendar/sync', data),
     removeStudyEvents: () => api.delete('/api/calendar/events'),

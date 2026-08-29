@@ -27,7 +27,9 @@ This describes how to deploy StudyMentor AI to production. No deployment has bee
 
 1. **Set environment variables** at build time (see `my-app/.env.example`):
    - `VITE_API_BASE_URL` — the deployed backend's public URL, e.g. `https://api.studymentor.example.com`
-   - `VITE_GEMINI_API_KEY` — only if you intentionally want the AI Study Buddy chat feature to call Gemini directly from the browser; otherwise leave unset. This key **will be visible in the built JS bundle** since it's a Vite `VITE_` variable — do not use a key with billing limits you're not comfortable exposing.
+   - `VITE_DEMO_MODE` — optional, leave `false`/unset for production
+
+   Never add a Gemini/Groq API key as a `VITE_`-prefixed variable. Any `VITE_` variable is compiled into the static JS bundle and is publicly visible to anyone who opens devtools — there is no server boundary protecting it. All AI calls are routed through the backend (`POST /api/ai/chat` and friends), which holds `GOOGLE_API_KEY`/`GROQ_API_KEY` server-side only.
 2. **Build**: `npm ci && npm run build` inside `my-app/`. Output is `my-app/dist/`.
 3. **Deploy** the `dist/` folder to your static host. Configure the host to serve `index.html` for all routes (SPA fallback) since this is a client-side-routed React app.
 

@@ -5,6 +5,7 @@ API router for syllabus parsing and flashcard generation endpoints
 
 from fastapi import APIRouter, HTTPException, UploadFile, File, Form
 from typing import Dict, Optional
+import asyncio
 import uuid
 import tempfile
 import os
@@ -16,7 +17,7 @@ from models.syllabus import (
 )
 from models.base import SuccessResponse
 from middleware.error_handling import create_success_response
-from utils.llm_utils import parse_syllabus_text, extract_text_from_pdf
+from utils.llm_utils import parse_syllabus_text, extract_text_from_pdf, parse_json_from_llm_response
 import utils.llm_utils as llm_utils
 
 router = APIRouter(prefix="/api/syllabus", tags=["Syllabus"])
@@ -39,7 +40,7 @@ async def parse_syllabus_text_endpoint(request: SyllabusParseRequest):
             # Try to parse JSON response, fallback to simple structure
             import json
             try:
-                parsed_json = json.loads(llm_response)
+                parsed_json = parse_json_from_llm_response(llm_response)
                 structured_data = {}
                 
                 # Handle the expected JSON structure with topics array
@@ -133,7 +134,7 @@ async def parse_syllabus_pdf(file: UploadFile = File(...), use_mock: bool = Form
                 # Try to parse JSON response
                 import json
                 try:
-                    parsed_json = json.loads(llm_response)
+                    parsed_json = parse_json_from_llm_response(llm_response)
                     structured_data = {}
                     
                     # Handle the expected JSON structure with topics array
@@ -230,12 +231,12 @@ async def generate_flashcards(request: FlashcardRequest):
                 flashcards.append(flashcard)
         else:
             # Generate flashcards using LLM utils
-            llm_response = llm_utils.generate_flashcards(request.topic, request.num_cards)
+            llm_response = await asyncio.to_thread(llm_utils.generate_flashcards, request.topic, request.num_cards)
             
             # Parse flashcards from LLM response
             import json
             try:
-                flashcard_data = json.loads(llm_response)
+                flashcard_data = parse_json_from_llm_response(llm_response)
                 flashcards = []
                 for i, card_data in enumerate(flashcard_data.get("flashcards", [])[:request.num_cards]):
                     flashcard = Flashcard(

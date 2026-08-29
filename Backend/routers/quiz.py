@@ -5,6 +5,7 @@ API router for quiz-related endpoints
 
 from fastapi import APIRouter, HTTPException
 from typing import Dict
+import asyncio
 import uuid
 from datetime import datetime
 
@@ -14,7 +15,7 @@ from models.quiz import (
 )
 from models.base import SuccessResponse
 from middleware.error_handling import create_success_response, LLMQuotaExceededException
-from utils.llm_utils import generate_quiz
+from utils.llm_utils import generate_quiz, parse_json_from_llm_response
 
 router = APIRouter(prefix="/api/quiz", tags=["Quiz"])
 
@@ -41,12 +42,12 @@ async def generate_quiz_endpoint(request: QuizGenerateRequest):
             }
         else:
             # Generate quiz using LLM utils
-            llm_response = generate_quiz(request.topic)
+            llm_response = await asyncio.to_thread(generate_quiz, request.topic)
             
             # Parse JSON response from LLM
             import json
             try:
-                quiz_data = json.loads(llm_response)
+                quiz_data = parse_json_from_llm_response(llm_response)
             except json.JSONDecodeError:
                 # Fallback to mock if JSON parsing fails
                 raise Exception("Invalid JSON response from LLM")

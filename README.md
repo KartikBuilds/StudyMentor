@@ -56,7 +56,9 @@ Never commit `.env` files — only `.env.example` (variable names, no values) be
 
 **Frontend** (`my-app/.env`, see `my-app/.env.example`):
 - `VITE_API_BASE_URL` — backend URL (defaults to `http://localhost:8000`)
-- `VITE_GEMINI_API_KEY` — optional, only needed if you want the AI Study Buddy chat to call Gemini directly from the browser
+- `VITE_DEMO_MODE` — optional, off by default; set to `true` for an offline demo with mock auth and no real backend/AI calls
+
+There is intentionally no Gemini/AI API key variable on the frontend. The AI Study Buddy chat and all other AI features call the backend (`POST /api/ai/chat`, etc.), which holds the real key server-side — the key is never bundled into the browser.
 
 ## Testing
 

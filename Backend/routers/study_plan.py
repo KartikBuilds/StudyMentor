@@ -5,6 +5,7 @@ API router for study plan generation endpoints
 
 from fastapi import APIRouter, HTTPException
 from typing import Dict
+import asyncio
 import uuid
 import json
 from datetime import datetime
@@ -72,7 +73,7 @@ async def generate_study_plan_endpoint(request: StudyPlanRequest):
             # Generate study plan using LLM utils
             import json
             syllabus_json_str = json.dumps(request.syllabus)
-            llm_response = llm_generate_study_plan(syllabus_json_str, request.exam_days)
+            llm_response = await asyncio.to_thread(llm_generate_study_plan, syllabus_json_str, request.exam_days)
             
             # Parse JSON response from LLM (or handle as text)
             try:

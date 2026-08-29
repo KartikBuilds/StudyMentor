@@ -19,6 +19,7 @@ SWITCHING BETWEEN LLM PROVIDERS:
 
 # Option 1: Groq (Current - Active)
 from langchain_groq import ChatGroq
+import asyncio
 import dotenv
 import os
 import PyPDF2
@@ -72,7 +73,7 @@ genai.configure(api_key=gemini_api_key)
 
 # Initialize Gemini LLM
 llm = ChatGoogleGenerativeAI(
-    model="gemini-1.5-flash",  
+    model="gemini-3.6-flash",  
     google_api_key=gemini_api_key,
     temperature=0.7,
     convert_system_message_to_human=True
@@ -290,6 +291,52 @@ def extract_text_from_image(image_file, ocr_method: str = "auto") -> str:
     except Exception as e:
         return f"Error processing image: {str(e)}"
 
+def extract_llm_text(content) -> str:
+    """
+    Normalize a LangChain chat model's `.content` into a plain string.
+
+    Some models (e.g. newer Gemini versions via ChatGoogleGenerativeAI)
+    return `.content` as a list of content blocks like
+    [{"type": "text", "text": "..."}] instead of a plain string.
+    """
+    if isinstance(content, str):
+        return content
+    if isinstance(content, list):
+        parts = []
+        for block in content:
+            if isinstance(block, str):
+                parts.append(block)
+            elif isinstance(block, dict) and "text" in block:
+                parts.append(block["text"])
+        return "".join(parts)
+    return str(content)
+
+def parse_json_from_llm_response(text: str):
+    """
+    Parse a JSON object out of an LLM response, tolerating common
+    formatting quirks (e.g. Gemini wrapping JSON in ```json ... ```
+    markdown code fences, or adding text before/after the object).
+
+    Raises json.JSONDecodeError if no JSON object can be found/parsed.
+    """
+    import json
+    import re
+
+    text = text.strip()
+    # Strip markdown code fences (```json ... ``` or ``` ... ```)
+    fence_match = re.match(r'^```(?:json)?\s*(.*?)\s*```$', text, re.DOTALL)
+    if fence_match:
+        text = fence_match.group(1).strip()
+
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        # Fall back to grabbing the first {...} block anywhere in the text
+        json_match = re.search(r'\{.*\}', text, re.DOTALL)
+        if json_match:
+            return json.loads(json_match.group())
+        raise
+
 async def parse_syllabus_text(text: str) -> str:
     """Send syllabus text to LLM and get structured topics JSON"""
     # Validate input
@@ -329,36 +376,23 @@ INSTRUCTIONS:
 Please respond ONLY with the JSON structure, no additional text.
 """
     
-    # Current implementation (Groq/LangChain)
-    response = llm.invoke(prompt).content
-    return response
-    
-    # Alternative Gemini implementation (Commented - Ready to Switch)
-    """
-    # Direct Gemini API call
-    try:
-        gemini_model = genai.GenerativeModel('gemini-1.5-flash')
-        response = gemini_model.generate_content(prompt)
-        return response.text
-    except Exception as e:
-        print(f"Gemini API error: {e}")
-        return f"Error: {str(e)}"
-    """
+    # Offloaded to a worker thread - see call_llm_async's docstring for why.
+    return await asyncio.to_thread(lambda: extract_llm_text(llm.invoke(prompt).content))
 
 async def call_llm_async(prompt: str) -> str:
-    """Generic async LLM call function for AI features"""
+    """
+    Generic async LLM call function for AI features.
+
+    `llm.invoke()` is a blocking network call - running it directly inside
+    an `async def` would freeze the entire single-process event loop (and
+    therefore every other request being served) for its whole duration,
+    which can be tens of seconds during a provider rate-limit retry. It is
+    offloaded to a worker thread via asyncio.to_thread so the event loop
+    stays responsive to other requests while this one is in flight.
+    """
     try:
-        # Current implementation (Groq/LangChain)
-        response = llm.invoke(prompt).content
+        response = await asyncio.to_thread(lambda: extract_llm_text(llm.invoke(prompt).content))
         return response
-        
-        # Alternative Gemini implementation (Commented - Ready to Switch)
-        """
-        # Direct Gemini API call
-        gemini_model = genai.GenerativeModel('gemini-1.5-flash')
-        response = gemini_model.generate_content(prompt)
-        return response.text
-        """
     except Exception as e:
         print(f"LLM call error: {e}")
         return f"I apologize, but I'm having trouble processing your request right now. Please try again later."
@@ -421,14 +455,14 @@ Output in JSON format with this exact structure:
 Respond ONLY with the JSON, no additional text."""
     
     # Current implementation (Groq/LangChain)
-    response = llm.invoke(prompt).content
+    response = extract_llm_text(llm.invoke(prompt).content)
     return response
     
     # Alternative Gemini implementation (Commented - Ready to Switch)
     """
     # Direct Gemini API call
     try:
-        gemini_model = genai.GenerativeModel('gemini-1.5-flash')
+        gemini_model = genai.GenerativeModel('gemini-3.6-flash')
         response = gemini_model.generate_content(prompt)
         return response.text
     except Exception as e:
@@ -466,14 +500,14 @@ Rules:
 Return ONLY valid JSON, no additional text."""
     
     # Current implementation (Groq/LangChain)
-    response = llm.invoke(prompt).content
+    response = extract_llm_text(llm.invoke(prompt).content)
     return response
     
     # Alternative Gemini implementation (Commented - Ready to Switch)
     """
     # Direct Gemini API call
     try:
-        gemini_model = genai.GenerativeModel('gemini-1.5-flash')
+        gemini_model = genai.GenerativeModel('gemini-3.6-flash')
         response = gemini_model.generate_content(prompt)
         return response.text
     except Exception as e:
@@ -566,14 +600,14 @@ Guidelines:
 Respond ONLY with the JSON, no additional text."""
     
     # Current implementation (Groq/LangChain)
-    response = llm.invoke(prompt).content
+    response = extract_llm_text(llm.invoke(prompt).content)
     return response
     
     # Alternative Gemini implementation (Commented - Ready to Switch)
     """
     # Direct Gemini API call
     try:
-        gemini_model = genai.GenerativeModel('gemini-1.5-flash')
+        gemini_model = genai.GenerativeModel('gemini-3.6-flash')
         response = gemini_model.generate_content(prompt)
         return response.text
     except Exception as e:
@@ -616,14 +650,14 @@ Guidelines:
 Respond ONLY with the JSON, no additional text."""
     
     # Current implementation (Groq/LangChain)
-    response = llm.invoke(prompt).content
+    response = extract_llm_text(llm.invoke(prompt).content)
     return response
     
     # Alternative Gemini implementation (Commented - Ready to Switch)
     """
     # Direct Gemini API call
     try:
-        gemini_model = genai.GenerativeModel('gemini-1.5-flash')
+        gemini_model = genai.GenerativeModel('gemini-3.6-flash')
         response = gemini_model.generate_content(prompt)
         return response.text
     except Exception as e:
@@ -649,14 +683,14 @@ Provide a comprehensive answer based on the context provided. If the context doe
         prompt = f"Answer the following question: {question}"
     
     # Current implementation (Groq/LangChain)
-    response = llm.invoke(prompt).content
+    response = extract_llm_text(llm.invoke(prompt).content)
     return response
     
     # Alternative Gemini implementation (Commented - Ready to Switch)
     """
     # Direct Gemini API call
     try:
-        gemini_model = genai.GenerativeModel('gemini-1.5-flash')
+        gemini_model = genai.GenerativeModel('gemini-3.6-flash')
         response = gemini_model.generate_content(prompt)
         return response.text
     except Exception as e:

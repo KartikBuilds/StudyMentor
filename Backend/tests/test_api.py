@@ -64,22 +64,28 @@ def test_quiz_generate_missing_topic_returns_422():
     assert response.status_code == 422
 
 
-def test_register_without_database_returns_clear_error_not_fake_success():
-    """Registration must never silently fabricate a fake account when the
-    database is unreachable - it should surface a clear error instead."""
+def test_register_never_fabricates_a_fake_success():
+    """Registration must never silently fabricate a fake account. It should
+    either genuinely persist a new user (201), reject a real duplicate email
+    (400), or - if the database is unreachable - surface a clear 503 error.
+    Any other outcome (e.g. a 200/201 with no real persistence) would mean
+    it fell back to the old fabricated "demo_user_id" behavior."""
+    import uuid
     response = client.post(
         "/auth/register",
         json={
             "full_name": "Test User",
-            "email": "nonexistent-db-test@example.com",
+            "email": f"db-fabrication-test-{uuid.uuid4().hex}@example.com",
             "password": "testpass123",
         },
     )
-    # With no MongoDB configured in the test environment, this must fail
-    # loudly (503) rather than returning a fabricated demo user as success.
-    if response.status_code != 201:
-        assert response.status_code == 503
+    assert response.status_code in (201, 400, 503)
+    if response.status_code == 503:
         assert "unavailable" in response.json()["error"]["message"].lower()
+    elif response.status_code == 201:
+        # A real, persisted user must have a real Mongo ObjectId, not the
+        # old hardcoded fake "demo_user_id".
+        assert response.json()["user"]["id"] != "demo_user_id"
 
 
 def test_login_invalid_credentials_returns_401_or_503():
