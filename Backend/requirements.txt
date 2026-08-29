@@ -1,3 +1,11 @@
+# Production runtime dependencies only. Kept deliberately lean to fit
+# Render's free-tier 512 MB memory limit - see docs/BASELINE_AUDIT.md and
+# DEPLOYMENT.md for the reasoning behind what was removed.
+#
+# For local development/testing (including the alternate Groq LLM
+# provider path and test tooling), install requirements-dev.txt instead,
+# which layers on top of this file.
+
 # FastAPI and server dependencies
 fastapi
 uvicorn[standard]
@@ -13,28 +21,37 @@ python-jose[cryptography]
 passlib[bcrypt]
 email-validator
 
-# Existing dependencies
+# Core utilities
 python-dotenv
-google-generativeai
-streamlit
-langchain
-langchain-groq
-groq
-PyPDF2
-langchain-community
-faiss-cpu
-sentence-transformers
-numpy
-tiktoken
-langchain-google-genai
-pytesseract
-Pillow
-opencv-python
-easyocr
+PyPDF2  # PDF text extraction (the verified, default syllabus-parsing path)
 
-# Google Calendar integration (imported unconditionally by routers/calendar.py,
-# even though OAuth sync itself is an optional feature - see CALENDAR_SETUP.md)
-google-auth
-google-auth-oauthlib
-google-auth-httplib2
-google-api-python-client
+# LLM provider - Gemini (the provider actually configured via LLM_PROVIDER
+# in production). Only the credential for the selected provider is
+# required/accessed at runtime - see utils/llm_utils.py. The Groq provider
+# path remains fully supported in code but its SDK is a dev-only
+# dependency (requirements-dev.txt) since production does not use it.
+google-generativeai
+langchain-google-genai
+
+# NOT included in production, and why:
+# - streamlit, faiss-cpu, sentence-transformers, numpy, tiktoken,
+#   langchain, langchain-community: only used by the vector-search/RAG
+#   feature (utils/vector_utils.py), which was never wired into any real
+#   API route (the vector DB was never populated) and has been removed.
+# - pytesseract, Pillow, opencv-python, easyocr: local image-OCR
+#   dependencies. No route ever exposed image-based syllabus parsing;
+#   PDF text extraction (above, PyPDF2) is the default and only supported
+#   path. These imports are now optional/lazy in utils/llm_utils.py and
+#   report an honest "not available" error if ever called without them
+#   installed, rather than crashing at import time.
+# - google-auth, google-auth-oauthlib, google-auth-httplib2,
+#   google-api-python-client: only needed for the optional Google
+#   Calendar OAuth sync (utils/calendar_utils.py). The ICS export in
+#   CalendarIntegrationSimplified.jsx is the reliable default and needs
+#   no backend dependency at all. These imports are now lazy (loaded only
+#   inside authenticate(), and only actually reached if a real
+#   credentials.json is present on the server) - see CALENDAR_SETUP.md.
+# - langchain-groq, groq: the Groq LLM provider SDK. Not used unless
+#   LLM_PROVIDER=groq, which production does not set. Kept as a dev-only
+#   dependency in requirements-dev.txt so the Groq code path stays
+#   tested.

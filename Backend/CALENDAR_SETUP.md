@@ -18,9 +18,18 @@
 
 1. **Install Dependencies**
 
-   Google Calendar dependencies are included in the main `requirements.txt`
-   (they are imported unconditionally by `routers/calendar.py`), so a normal
-   `pip install -r requirements.txt` is all that's needed.
+   Google Calendar OAuth is optional and its dependencies are **not** in
+   the production `requirements.txt` (kept lean to fit Render's free-tier
+   memory limit). `utils/calendar_utils.py` imports them lazily, only
+   inside `authenticate()`, and only if a real `credentials.json` is
+   actually present - so a deployment without this file never touches
+   these packages at all. If you want to use OAuth sync, install them
+   separately:
+   ```bash
+   pip install google-auth google-auth-oauthlib google-auth-httplib2 google-api-python-client
+   ```
+   The reliable default that needs none of this is the client-side ICS
+   export in `CalendarIntegrationSimplified.jsx` (see `DEPLOYMENT.md`).
 
 2. **Place Credentials File**
    ```

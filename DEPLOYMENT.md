@@ -14,14 +14,16 @@ This describes how to deploy StudyMentor AI to production. No deployment has bee
 2. **Set environment variables** on the host (see `Backend/.env.example` for the full list). At minimum for production:
    - `MONGODB_URL` — your Atlas/production connection string
    - `JWT_SECRET_KEY` — a strong random secret (never the placeholder value)
-   - `GOOGLE_API_KEY` and/or `GROQ_API_KEY` — real LLM provider keys
+   - `LLM_PROVIDER` — `gemini` (default) or `groq`; only that provider's key is required/used
+   - `GOOGLE_API_KEY` (if `LLM_PROVIDER=gemini`) or `GROQ_API_KEY` (if `LLM_PROVIDER=groq`)
    - `ENVIRONMENT=production`
    - `ALLOWED_ORIGINS` — comma-separated list of your deployed frontend origin(s), e.g. `https://studymentor.example.com`. The backend **refuses to start** in production without this set (see `Backend/app.py`), and never uses a wildcard origin.
    - `DEBUG=False`
-3. **Install dependencies**: `pip install -r Backend/requirements.txt`.
+3. **Install dependencies**: `pip install -r Backend/requirements.txt`. This is a deliberately lean, production-only dependency set (no ML/OCR/vector-search stack) sized to fit low-memory free tiers like Render's 512 MB web service - typical runtime RSS is under 150 MB. For local development or to test the alternate Groq provider path, use `pip install -r Backend/requirements-dev.txt` instead, which layers test tooling and the Groq SDK on top.
 4. **Run the server**: `uvicorn app:app --host 0.0.0.0 --port $PORT` (from the `Backend/` directory). Most PaaS providers (Render, Railway) auto-detect this from a `Procfile` or start command field — set the start command to the line above.
 5. **Health check**: point your platform's health check at `GET /api/health`. It returns `200` with `{"success": true, "data": {"status": "healthy"}}` once the app is up — this does not depend on MongoDB being reachable, so a green health check does not by itself guarantee database connectivity; check logs for `MongoDB connected successfully` on boot.
-6. Google Calendar OAuth (`Backend/CALENDAR_SETUP.md`) is optional; the reliable default is the client-side ICS export in `CalendarIntegrationSimplified.jsx`, which requires no backend configuration.
+6. Google Calendar OAuth (`Backend/CALENDAR_SETUP.md`) is optional and its dependencies are **not** in `requirements.txt` — `utils/calendar_utils.py` imports them lazily and only if a real `credentials.json` is present. The reliable default that needs no backend dependency at all is the client-side ICS export in `CalendarIntegrationSimplified.jsx`.
+7. Image-based OCR syllabus parsing is likewise not installed in production - PDF text extraction (PyPDF2) is the default and only supported syllabus-upload path. An OCR call without the optional packages installed returns an honest "not available" message rather than crashing or faking extraction.
 
 ## Frontend deployment
 

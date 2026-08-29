@@ -2,17 +2,20 @@
 calendar_utils.py
 Google Calendar API integration for StudyMentor
 Allows users to sync their study plans with Google Calendar
+
+Google Calendar OAuth is an optional feature (the ICS export in
+CalendarIntegrationSimplified.jsx is the reliable default and needs no
+backend configuration at all - see DEPLOYMENT.md). The google-auth/
+google-api-python-client packages are therefore imported lazily, inside
+authenticate(), rather than at module import time, so they are never
+pulled into memory during FastAPI startup and are only touched at all if
+a user actually has a real credentials.json configured on the server.
 """
 
 import os
 import json
 from datetime import datetime, timedelta
 from typing import List, Dict, Optional
-from google.auth.transport.requests import Request
-from google.oauth2.credentials import Credentials
-from google_auth_oauthlib.flow import InstalledAppFlow
-from googleapiclient.discovery import build
-from googleapiclient.errors import HttpError
 
 # Calendar API scopes
 SCOPES = ['https://www.googleapis.com/auth/calendar']
@@ -39,6 +42,17 @@ class GoogleCalendarIntegration:
             bool: True if authentication successful, False otherwise
         """
         try:
+            # Lazy import - see module docstring for why. Assigned to
+            # globals so the other methods' `except HttpError` clauses
+            # (only reached after a successful authenticate() call) can
+            # resolve the name.
+            global Credentials, Request, InstalledAppFlow, build, HttpError
+            from google.auth.transport.requests import Request
+            from google.oauth2.credentials import Credentials
+            from google_auth_oauthlib.flow import InstalledAppFlow
+            from googleapiclient.discovery import build
+            from googleapiclient.errors import HttpError
+
             # Load existing token if available
             if os.path.exists(self.token_file):
                 self.creds = Credentials.from_authorized_user_file(self.token_file, SCOPES)

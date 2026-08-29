@@ -14,10 +14,18 @@ import dotenv
 import os
 import PyPDF2
 import tempfile
-from PIL import Image
-import numpy as np
 
-# OCR imports with fallback handling
+# Optional local-OCR dependencies. None of these are required for the
+# verified product flow (PDF text extraction uses PyPDF2 only, below) and
+# are not installed in the production runtime to keep the deployment
+# lightweight - image-based OCR honestly reports itself as unavailable
+# rather than crashing at import time or faking extraction.
+try:
+    from PIL import Image
+    PIL_AVAILABLE = True
+except ImportError:
+    PIL_AVAILABLE = False
+
 try:
     import pytesseract
     PYTESSERACT_AVAILABLE = True
@@ -138,8 +146,8 @@ def extract_text_from_image_pytesseract(image_path: str) -> str:
     Returns:
         str: Extracted text
     """
-    if not PYTESSERACT_AVAILABLE:
-        return "Error: Pytesseract not available. Please install: pip install pytesseract"
+    if not PYTESSERACT_AVAILABLE or not PIL_AVAILABLE:
+        return "Error: Pytesseract/Pillow not available. Please install: pip install pytesseract pillow"
 
     try:
         # Test if tesseract is accessible
@@ -397,47 +405,10 @@ async def call_llm_async(prompt: str) -> str:
         return f"I apologize, but I'm having trouble processing your request right now. Please try again later."
 
 def generate_quiz(topic: str) -> str:
-    """Generate 5 MCQs or flashcards for a topic, optionally using vector database context"""
-    try:
-        from .vector_utils import get_relevant_context
-        context = get_relevant_context(topic)
-        if context:
-            prompt = f"""Based on the following context, create 5 multiple choice questions for the topic: {topic}.
-
-Context:
-{context}
-
-Create questions that test understanding of the key concepts. Output in JSON format with this structure:
-{{
-    "questions": [
-        {{
-            "question": "Question text",
-            "options": ["A) option1", "B) option2", "C) option3", "D) option4"],
-            "correct_answer": "A",
-            "explanation": "Brief explanation"
-        }}
-    ]
-}}"""
-        else:
-            prompt = f"""Create 5 multiple choice questions for the topic: {topic}.
+    """Generate 5 MCQs for a topic."""
+    prompt = f"""Create 5 multiple choice questions for the topic: {topic}.
 
 Please create educational questions that test understanding of key concepts.
-
-Output in JSON format with this exact structure:
-{{
-    "questions": [
-        {{
-            "question": "Question text",
-            "options": ["A) option1", "B) option2", "C) option3", "D) option4"],
-            "correct_answer": "A",
-            "explanation": "Brief explanation"
-        }}
-    ]
-}}
-
-Respond ONLY with the JSON, no additional text."""
-    except ImportError:
-        prompt = f"""Create 5 multiple choice questions for the topic: {topic}.
 
 Output in JSON format with this exact structure:
 {{
@@ -515,65 +486,8 @@ Return ONLY valid JSON, no additional text."""
     """
 
 def generate_flashcards(topic: str, num_cards: int = 10) -> str:
-    """Generate flashcards for a given topic, optionally using vector database context"""
-    try:
-        from .vector_utils import get_relevant_context
-        context = get_relevant_context(topic)
-        if context:
-            prompt = f"""Based on the following context, create {num_cards} flashcards for the topic: {topic}.
-
-Context:
-{context}
-
-Create flashcards that help students memorize and understand key concepts, definitions, formulas, and important facts.
-
-Output in JSON format with this exact structure:
-{{
-    "flashcards": [
-        {{
-            "front": "Question or concept to remember",
-            "back": "Answer, definition, or explanation",
-            "category": "Category or subtopic",
-            "difficulty": "easy|medium|hard"
-        }}
-    ]
-}}
-
-Guidelines:
-- Include definitions, key concepts, formulas, and important facts
-- Make questions clear and concise
-- Provide comprehensive but concise answers
-- Vary difficulty levels
-- Cover different aspects of the topic
-
-Respond ONLY with the JSON, no additional text."""
-        else:
-            prompt = f"""Create {num_cards} flashcards for the topic: {topic}.
-
-Create flashcards that help students memorize and understand key concepts, definitions, formulas, and important facts.
-
-Output in JSON format with this exact structure:
-{{
-    "flashcards": [
-        {{
-            "front": "Question or concept to remember",
-            "back": "Answer, definition, or explanation",
-            "category": "Category or subtopic",
-            "difficulty": "easy|medium|hard"
-        }}
-    ]
-}}
-
-Guidelines:
-- Include definitions, key concepts, formulas, and important facts
-- Make questions clear and concise
-- Provide comprehensive but concise answers
-- Vary difficulty levels (easy, medium, hard)
-- Cover different aspects of the topic
-
-Respond ONLY with the JSON, no additional text."""
-    except ImportError:
-        prompt = f"""Create {num_cards} flashcards for the topic: {topic}.
+    """Generate flashcards for a given topic."""
+    prompt = f"""Create {num_cards} flashcards for the topic: {topic}.
 
 Create flashcards that help students memorize and understand key concepts, definitions, formulas, and important facts.
 
@@ -665,21 +579,8 @@ Respond ONLY with the JSON, no additional text."""
     """
 
 def generate_contextual_answer(question: str) -> str:
-    """Generate an answer to a question using vector database context"""
-    try:
-        from .vector_utils import get_relevant_context
-        context = get_relevant_context(question)
-        if context:
-            prompt = f"""Based on the following context, answer the question: {question}
-
-Context:
-{context}
-
-Provide a comprehensive answer based on the context provided. If the context doesn't contain enough information, mention that and provide what you can."""
-        else:
-            prompt = f"Answer the following question: {question}"
-    except ImportError:
-        prompt = f"Answer the following question: {question}"
+    """Generate an answer to a question."""
+    prompt = f"Answer the following question: {question}"
 
     # Current implementation (Groq/LangChain)
     response = extract_llm_text(llm.invoke(prompt).content)
